@@ -16,27 +16,16 @@ class ApiService
         $this->token = session('api_token');
     }
 
-    /**
-     * Set authentication token
-     */
     public function setToken(?string $token): self
     {
         $this->token = $token;
         return $this;
     }
 
-    /**
-     * Get HTTP client with optional authentication
-     */
     protected function client()
     {
-        $client = Http::baseUrl($this->baseUrl)
-            ->timeout(30)
-            ->withHeaders([
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ]);
-
+        $client = Http::baseUrl($this->baseUrl)->timeout(30);
+        
         if ($this->token) {
             $client->withToken($this->token);
         }
@@ -44,49 +33,28 @@ class ApiService
         return $client;
     }
 
-    /**
-     * Authentication Methods
-     */
     public function login(string $email, string $password)
     {
-        try {
-            $response = $this->client()->post('/login', [
-                'email' => $email,
-                'password' => $password,
-            ]);
-            
-            // Debug: Log login attempt
-            \Log::info('Login attempt:', ['email' => $email]);
-            \Log::info('Login response status:', ['status' => $response->status()]);
-            \Log::info('Login response body:', ['body' => $response->body()]);
+        $response = $this->client()->post('/login', compact('email', 'password'));
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $token = $data['access_token'] ?? $data['token'] ?? null;
-                if ($token) {
-                    session(['api_token' => $token]);
-                    if (!empty($data['user']) && is_array($data['user'])) {
-                        session([
-                            'user_name' => $data['user']['name'] ?? null,
-                            'user_email' => $data['user']['email'] ?? null,
-                        ]);
-                    }
-                    $this->setToken($token);
-                    \Log::info('Login successful, token set');
-                    return ['token' => $token, 'user' => $data['user'] ?? null];
-                }
+        if (!$response->successful()) {
+            return $response->status() === 422 ? ['errors' => $response->json()] : null;
+        }
+
+        $data = $response->json()['data'] ?? $response->json();
+        $token = $data['access_token'] ?? $data['token'] ?? null;
+        $user = $data['user'] ?? null;
+
+        if ($token) {
+            session(['api_token' => $token]);
+            if ($user) {
+                session([
+                    'user_name' => $user['name'] ?? null,
+                    'user_email' => $user['email'] ?? null,
+                ]);
             }
-
-            // Handle validation errors (422)
-            if ($response->status() === 422) {
-                $errors = $response->json();
-                \Log::error('Login validation failed', ['errors' => $errors]);
-                return ['errors' => $errors];
-            }
-
-            \Log::error('Login failed', ['response' => $response->json(), 'status' => $response->status()]);
-        } catch (\Exception $e) {
-            \Log::error('Login exception', ['message' => $e->getMessage()]);
+            $this->token = $token;
+            return compact('token', 'user');
         }
 
         return null;
@@ -94,40 +62,35 @@ class ApiService
 
     public function register(string $name, string $email, string $password, ?string $password_confirmation = null)
     {
-        try {
-            $response = $this->client()->post('/register', [
-                'name' => $name,
-                'email' => $email,
-                'password' => $password,
-                'password_confirmation' => $password_confirmation ?? $password,
-            ]);
+        $response = $this->client()->post('/register', [
+            'name' => $name,
+            'email' => $email,
+            'password' => $password,
+            'password_confirmation' => $password_confirmation ?? $password,
+        ]);
 
-            if ($response->successful()) {
-                $data = $response->json();
-                $token = $data['access_token'] ?? $data['token'] ?? null;
-                if ($token) {
-                    session(['api_token' => $token]);
-                    if (!empty($data['user']) && is_array($data['user'])) {
-                        session([
-                            'user_name' => $data['user']['name'] ?? null,
-                            'user_email' => $data['user']['email'] ?? null,
-                        ]);
-                    }
-                    $this->setToken($token);
-                    return ['token' => $token, 'user' => $data['user'] ?? null];
-                }
-            }
-
-            // Handle validation errors (422)
+        if (!$response->successful()) {
             if ($response->status() === 422) {
                 $errors = $response->json();
-                \Log::error('Register validation failed', ['errors' => $errors]);
-                return ['errors' => $errors];
+                return ['errors' => $errors['errors'] ?? $errors];
             }
+            return null;
+        }
 
-            \Log::error('Register failed', ['response' => $response->json(), 'status' => $response->status()]);
-        } catch (\Exception $e) {
-            \Log::error('Register exception', ['message' => $e->getMessage()]);
+        $data = $response->json()['data'] ?? $response->json();
+        $token = $data['access_token'] ?? $data['token'] ?? null;
+        $user = $data['user'] ?? null;
+
+        if ($token) {
+            session(['api_token' => $token]);
+            if ($user) {
+                session([
+                    'user_name' => $user['name'] ?? null,
+                    'user_email' => $user['email'] ?? null,
+                ]);
+            }
+            $this->token = $token;
+            return compact('token', 'user');
         }
 
         return null;
@@ -135,164 +98,87 @@ class ApiService
 
     public function logout()
     {
-        $response = $this->client()->post('/logout');
-
-        session()->forget('api_token');
+        $this->client()->post('/logout');
+        session()->forget(['api_token', 'user_name', 'user_email']);
         $this->token = null;
-
-        return $response->successful();
+        return true;
     }
 
     public function me()
     {
         $response = $this->client()->get('/me');
-
-        if ($response->successful()) {
-            return $response->json();
-        }
-
-        return null;
+        return $response->successful() ? $response->json() : null;
     }
 
-    /**
-     * Posts Methods
-     */
     public function getPosts(array $filters = [])
     {
-        // $cacheKey = 'posts_' . md5(json_encode($filters));
-        // $ttl = app()->environment('local') ? 1 : 300;
-
-        try {
-            $response = $this->client()->get('/posts', $filters);
-            
-            // Debug: Log the filters and response
-            \Log::info('API Request - Filters:', $filters);
-            \Log::info('API Response Status:', ['status' => $response->status()]);
-            \Log::info('API Response Data:', $response->json());
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            \Log::error('API Exception:', ['message' => $e->getMessage()]);
+        $response = $this->client()->get('/posts', $filters);
+        
+        if (!$response->successful()) {
+            return ['data' => []];
         }
 
-        return ['data' => []];
+        $data = $response->json();
+        return isset($data['data']) ? $data : ['data' => $data];
     }
 
     public function getPost(string $slug)
     {
-        $cacheKey = 'post_' . $slug;
-
-        try {
-            $response = $this->client()->get("/posts/{$slug}");
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            //
-        }
-
-        return null;
+        $response = $this->client()->get("/posts/{$slug}");
+        return $response->successful() ? $response->json() : null;
     }
 
     public function createPost(array $data)
     {
-        try {
-            // Ensure status is published
-            $data['status'] = 'published';
-            
-            $response = $this->client()->post('/posts', $data);
+        $data['status'] = 'pending';
+        $response = $this->client()->post('/posts', $data);
 
-            if ($response->successful()) {
-                Cache::flush(); // Clear posts cache
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            //
+        if (!$response->successful()) {
+            return $response->status() === 422 
+                ? ['errors' => $response->json()['errors'] ?? $response->json()] 
+                : null;
         }
 
-        return null;
+        Cache::forget('categories');
+        $result = $response->json();
+        return isset($result['data']) ? $result : ['data' => $result];
     }
 
     public function getCategories()
     {
         return Cache::remember('categories', 3600, function () {
-            try {
-                $response = $this->client()->get('/categories');
-
-                if ($response->successful()) {
-                    return $response->json();
-                }
-            } catch (\Exception $e) {
-                //
-            }
-
-            return ['data' => []];
+            $response = $this->client()->get('/categories');
+            return $response->successful() ? $response->json() : ['data' => []];
         });
     }
 
-    /**
-     * Comments Methods
-     */
     public function getComments(int $postId)
     {
-        try {
-            $response = $this->client()->get("/posts/{$postId}/comments");
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-        } catch (\Exception $e) {
-            //
+        $response = $this->client()->get("/posts/{$postId}/comments");
+        
+        if (!$response->successful()) {
+            return ['data' => []];
         }
 
-        return ['data' => []];
+        $data = $response->json();
+        return isset($data['data']) ? $data : ['data' => $data];
     }
 
     public function createComment(int $postId, string $content)
     {
-        try {
-            $response = $this->client()->post('/comments', [
-                'post_id' => $postId,
-                'content' => $content,
-            ]);
-
-            if ($response->successful()) {
-                return $response->json();
-            }
-
-            \Log::error('Create comment failed', [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Create comment exception', ['message' => $e->getMessage()]);
-        }
-
-        return null;
+        $response = $this->client()->post("/posts/{$postId}/comments", ['content' => $content]);
+        return $response->successful() ? $response->json() : null;
     }
 
-    /**
-     * Check if user is authenticated
-     */
     public function isAuthenticated(): bool
     {
         return !empty($this->token);
     }
 
-    /**
-     * Get current user
-     */
     public function getCurrentUser()
     {
-        if (!$this->isAuthenticated()) {
-            return null;
-        }
-
-        return Cache::remember('current_user_' . $this->token, 600, function () {
-            return $this->me();
-        });
+        if (!$this->token) return null;
+        
+        return Cache::remember('user_' . $this->token, 600, fn() => $this->me());
     }
 }

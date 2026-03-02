@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use App\Services\ApiService;
+use Illuminate\Support\Facades\Log;
 
 new #[Layout('components.layout')] class extends Component {
     public $post;
@@ -13,23 +14,13 @@ new #[Layout('components.layout')] class extends Component {
     public function mount($slug, ApiService $apiService)
     {
         $this->slug = $slug;
-        
-        // Debug: Log the slug being requested
-        \Log::info('Post detail requested:', ['slug' => $slug]);
-        
-        $this->post = $apiService->getPost($slug);
+        $response = $apiService->getPost($slug);
 
-        // Debug: Log the API response
-        \Log::info('Post API response:', [
-            'post_found' => !empty($this->post),
-            'post_data' => $this->post
-        ]);
-
-        if (!$this->post) {
-            \Log::error('Post not found for slug:', ['slug' => $slug]);
+        if (!$response || !isset($response['data'])) {
             abort(404);
         }
 
+        $this->post = $response['data'];
         $this->loadComments($apiService);
     }
 
@@ -47,15 +38,7 @@ new #[Layout('components.layout')] class extends Component {
             return redirect()->route('login');
         }
 
-        $this->validate([
-            'newComment' => 'required|min:3|max:500'
-        ]);
-
-        \Log::info('Submitting comment', [
-            'post_id' => $this->post['id'],
-            'content' => $this->newComment,
-            'token' => session('api_token') ? 'exists' : 'missing'
-        ]);
+        $this->validate(['newComment' => 'required|min:3|max:500']);
 
         $result = $apiService->createComment($this->post['id'], $this->newComment);
 
@@ -63,10 +46,8 @@ new #[Layout('components.layout')] class extends Component {
             $this->newComment = '';
             $this->loadComments($apiService);
             session()->flash('message', 'Yorumunuz başarıyla gönderildi.');
-            \Log::info('Comment submitted successfully');
         } else {
-            session()->flash('error', 'Yorum gönderilirken bir hata oluştu. Lütfen tekrar deneyin.');
-            \Log::error('Comment submission failed');
+            session()->flash('error', 'Yorum gönderilirken bir hata oluştu.');
         }
     }
 };
@@ -75,13 +56,12 @@ new #[Layout('components.layout')] class extends Component {
 
 <div class="max-w-[1024px] mx-auto py-6">
     <div class="flex flex-col md:flex-row gap-6 justify-center">
-        <!-- Main Content Column -->
-        <div class="w-full md:w-2/3 lg:w-[740px]">
 
-            <!-- Post Card -->
+    <div class="w-full md:w-2/3 lg:w-[740px]">
+
             <div class="bg-white border border-gray-300 rounded overflow-hidden flex mb-4">
-                <!-- Vote Sidebar -->
-                <div class="w-10 bg-white flex flex-col items-center pt-3 gap-1 border-r border-gray-100">
+
+            <div class="w-10 bg-white flex flex-col items-center pt-3 gap-1 border-r border-gray-100">
                     <button class="text-gray-400 hover:text-[#FF4500] focus:outline-none">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7">
@@ -97,10 +77,10 @@ new #[Layout('components.layout')] class extends Component {
                     </button>
                 </div>
 
-                <!-- Post Content -->
+
                 <div class="flex-grow p-3">
-                    <!-- Header -->
-                    <div class="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
+
+                <div class="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
                         @if(isset($post['category']))
                             <span
                                 class="font-bold text-gray-900 hover:underline cursor-pointer">r/{{ $post['category']['name'] }}</span>
@@ -112,13 +92,13 @@ new #[Layout('components.layout')] class extends Component {
                         <span>{{ \Carbon\Carbon::parse($post['created_at'])->diffForHumans() }}</span>
                     </div>
 
-                    <!-- Title -->
+
                     <h1 class="text-xl font-medium text-gray-900 leading-snug mb-4 break-all"
                         style="word-break: break-all !important; overflow-wrap: anywhere !important;">
                         {{ $post['title'] }}
                     </h1>
 
-                    <!-- Body -->
+
                     <div class="mb-6">
                         @if(isset($post['image']))
                             <div
@@ -134,7 +114,7 @@ new #[Layout('components.layout')] class extends Component {
                         </div>
                     </div>
 
-                    <!-- Footer Actions -->
+
                     <div
                         class="flex items-center gap-4 text-gray-500 font-bold text-xs border-b border-gray-200 pb-4 mb-6">
                         <div
@@ -167,7 +147,7 @@ new #[Layout('components.layout')] class extends Component {
                         </div>
                     </div>
 
-                    <!-- Comments Section -->
+
                     <div class="">
                         @if(session('message'))
                             <div class="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded relative mb-4"
@@ -176,21 +156,22 @@ new #[Layout('components.layout')] class extends Component {
                             </div>
                         @endif
 
-                        <!-- Comment Form -->
+
                         @if(session('api_token'))
                             <div class="mb-8">
                                 <p class="text-sm mb-1 text-gray-600">Comment as <span
                                         class="text-blue-500">u/{{ session('user_name') ?? 'User' }}</span></p>
-                                <!-- Assuming we store user_name in session or just consistent fallback -->
-                                <form wire:submit="submitComment" class="relative">
+
+                                        <form wire:submit="submitComment" class="relative">
                                     <textarea wire:model="newComment" rows="4"
                                         class="w-full border border-gray-300 rounded p-3 focus:outline-none focus:border-gray-500 focus:ring-0 resize-y min-h-[120px]"
                                         placeholder="What are your thoughts?"></textarea>
                                     <div
                                         class="bg-gray-100 flex justify-end p-2 border-x border-b border-gray-300 rounded-b -mt-1">
-                                        <button type="submit"
+                                        <button type="submit" wire:loading.attr="disabled" wire:target="submitComment"
                                             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded-full text-sm disabled:opacity-50">
-                                            Yorum Yap
+                                            <span wire:loading.remove wire:target="submitComment">Yorum Yap</span>
+                                            <span wire:loading wire:target="submitComment">Gönderiliyor...</span>
                                         </button>
                                     </div>
                                     @error('newComment') <span class="text-red-500 text-xs mt-1">{{ $message }}</span>
@@ -211,19 +192,19 @@ new #[Layout('components.layout')] class extends Component {
                             </div>
                         @endif
 
-                        <!-- Comments List -->
+
                         <div class="space-y-6">
                             @forelse($comments as $comment)
                                 <div class="flex gap-3 group">
-                                    <!-- Comment Avatar -->
-                                    <div class="flex-shrink-0">
+
+                                <div class="flex-shrink-0">
                                         <div class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
                                             <img src="https://ui-avatars.com/api/?name={{ urlencode($comment['user']['name'] ?? 'U') }}&background=EBF4FF&color=2563EB"
                                                 class="w-full h-full">
                                         </div>
                                     </div>
 
-                                    <!-- Comment Body -->
+
                                     <div class="flex-grow">
                                         <div class="flex items-center gap-2 text-xs text-gray-500 mb-1">
                                             <span
@@ -236,7 +217,7 @@ new #[Layout('components.layout')] class extends Component {
                                             {{ $comment['content'] }}
                                         </div>
 
-                                        <!-- Comment Actions -->
+
                                         <div class="flex items-center gap-2 mt-1 -ml-2">
                                             <button
                                                 class="flex items-center gap-1 p-1 rounded hover:bg-gray-100 text-gray-500 text-xs font-bold">
@@ -279,19 +260,19 @@ new #[Layout('components.layout')] class extends Component {
             </div>
         </div>
 
-        <!-- Sidebar -->
+
         <div class="hidden md:block w-80 space-y-4">
 
-            <!-- About Community (Same as List) -->
-            <div class="bg-white border border-gray-300 rounded overflow-hidden">
+
+        <div class="bg-white border border-gray-300 rounded overflow-hidden">
                 <div class="bg-blue-500 h-10 pl-4 flex items-center">
                     <span class="text-white font-bold text-sm">Hakkında</span>
                 </div>
                 <div class="p-4">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
-                            <!-- Logo placeholder -->
-                            <span
+
+                        <span
                                 class="w-full h-full flex items-center justify-center text-xl font-bold text-gray-500">K</span>
                         </div>
                         <h2 class="font-bold text-gray-900 text-lg">Kle Blog</h2>
@@ -319,7 +300,7 @@ new #[Layout('components.layout')] class extends Component {
                 </div>
             </div>
 
-            <!-- Rules / Footer -->
+
             <div class="bg-white border border-gray-300 rounded p-4 text-xs text-gray-500">
                 <div class="grid grid-cols-2 gap-2 mb-4">
                     <a href="{{ route('home') }}" class="hover:underline">Ana Sayfa</a>

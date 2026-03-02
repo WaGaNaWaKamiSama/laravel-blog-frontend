@@ -25,20 +25,24 @@ new #[Layout('components.layout')] class extends Component {
             'category_id' => 'required|integer',
         ]);
 
-        $postData = [
+        $response = $apiService->createPost([
             'title' => $this->title,
             'content' => $this->content,
             'category_id' => $this->category_id,
-        ];
+        ]);
 
-        $response = $apiService->createPost($postData);
-
-        if ($response && isset($response['slug'])) {
-            session()->flash('success', 'Gönderiniz başarıyla oluşturuldu! Admin onayından sonra yayınlanacaktır.');
-            return redirect()->route('home');
-        } else {
-            session()->flash('error', 'Yazı gönderilirken bir sorun oluştu.');
+        if ($response && isset($response['data'])) {
+            return redirect()->route('post.pending');
         }
+        
+        if ($response && isset($response['errors'])) {
+            foreach ($response['errors'] as $field => $messages) {
+                $this->addError($field, is_array($messages) ? $messages[0] : $messages);
+            }
+            return;
+        }
+
+        session()->flash('error', 'Yazı gönderilirken bir sorun oluştu.');
     }
 };
 

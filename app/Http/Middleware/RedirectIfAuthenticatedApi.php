@@ -6,13 +6,12 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CheckApiToken
+class RedirectIfAuthenticated
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!session('api_token')) {
-            return redirect()->route('login')
-                ->with('error', 'Bu sayfaya erişmek için giriş yapmalısınız.');
+        if (session('api_token')) {
+            return redirect()->route('home');
         }
 
         return $next($request);

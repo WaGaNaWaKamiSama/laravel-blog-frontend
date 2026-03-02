@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{{ $metaDescription ?? 'Kle - Dive into anything' }}">
-    <title>{{ $title ?? 'Kle - Dive into anything' }}</title>
+    <meta name="description" content="{{ $metaDescription ?? 'Kle - İnternetin Kalbi' }}">
+    <title>{{ $title ?? 'Kle - İnternetin Kalbi' }}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('klelogo.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
@@ -16,10 +17,7 @@
         <div class="h-12 flex items-center px-4 max-w-full">
             <!-- Logo -->
             <a href="{{ route('home') }}" class="flex items-center gap-2 mr-4">
-                <div class="w-8 h-8 bg-[#FF4500] rounded-full flex items-center justify-center">
-                    <span class="text-white font-bold text-lg">K</span>
-                </div>
-                <span class="font-bold text-xl hidden sm:block">Kle</span>
+                <img src="{{ asset('klelogo.svg') }}" alt="Kle Logo" class="w-8 h-8">
             </a>
 
             <!-- Search Bar -->
@@ -113,10 +111,11 @@
     <footer class="border-t border-gray-300 bg-white mt-12">
         <div class="max-w-5xl mx-auto px-4 py-8">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
+                <div class="flex items-center gap-2">
+                    <img src="{{ asset('klelogo.svg') }}" alt="Kle Logo" class="w-6 h-6">
                     <h3 class="font-bold text-gray-900 mb-1">Kle</h3>
-                    <p class="text-sm text-gray-600">Dive into anything</p>
                 </div>
+                <p class="text-sm text-gray-600">Her şeye dalın</p>
 
                 <div class="flex gap-6 text-sm">
                     <a href="{{ route('home') }}" class="text-gray-600 hover:text-gray-900">Ana Sayfa</a>

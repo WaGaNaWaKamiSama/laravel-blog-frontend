@@ -1,5 +1,4 @@
 <?php
-
 use Livewire\Volt\Component;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
@@ -34,43 +33,37 @@ new #[Layout('components.layout')] class extends Component {
     public function loadPosts()
     {
         $apiService = app(ApiService::class);
-        $filters = [];
-        if ($this->search)
-            $filters['search'] = $this->search;
-        if ($this->category)
-            $filters['category'] = $this->category;
+        $filters = array_filter([
+            'search' => $this->search,
+            'category' => $this->category,
+        ]);
 
         $response = $apiService->getPosts($filters);
         $this->posts = $response['data'] ?? [];
         
-        // Load comment counts for each post
         foreach ($this->posts as &$post) {
-            $commentsResponse = $apiService->getComments($post['id']);
-            $commentCount = count($commentsResponse['data'] ?? []);
-            $post['comments_count'] = $commentCount;
+            if (isset($post['id'])) {
+                $comments = $apiService->getComments($post['id']);
+                $post['comments_count'] = count($comments['data'] ?? []);
+            }
         }
     }
 };
-
 
 ?>
 
 
 <div class="max-w-[1024px] mx-auto py-6">
-    <!-- Success Message -->
     @if(session('success'))
         <div class="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span class="block sm:inline">{{ session('success') }}</span>
         </div>
     @endif
 
-    <!-- Layout Container -->
     <div class="flex flex-col md:flex-row gap-6 justify-center">
 
-        <!-- Feed Column -->
         <div class="w-full md:w-2/3 lg:w-[640px] space-y-4">
 
-            <!-- Filters -->
             <div class="bg-white p-4 rounded border border-gray-300 flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center justify-between">
                 <div class="text-sm font-bold text-gray-800 flex items-center gap-2">
                     <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -101,9 +94,7 @@ new #[Layout('components.layout')] class extends Component {
             </div>
 
             @forelse($posts as $post)
-                <!-- Reddit Post Card -->
                 <div class="bg-white border border-gray-300 rounded hover:border-gray-400 cursor-pointer transition-colors flex overflow-hidden">
-                    <!-- Vote Sidebar -->
                     <div class="w-10 bg-gray-50/50 flex flex-col items-center pt-3 gap-1 border-r border-gray-100/50">
                         <svg class="w-6 h-6 text-gray-400 hover:text-[#FF4500]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
@@ -114,9 +105,7 @@ new #[Layout('components.layout')] class extends Component {
                         </svg>
                     </div>
 
-                    <!-- Post Content -->
-                    <a href="{{ route('posts.show', $post['slug']) }}" wire:navigate class="flex-grow p-3 hover:bg-gray-50/30">
-                        <!-- Header -->
+                    <a href="{{ route('posts.show', $post['slug']) }}" class="flex-grow p-3 hover:bg-gray-50/30">
                         <div class="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
                             @if(isset($post['category']))
                                 <span class="font-bold text-gray-900 hover:underline z-10 relative">r/{{ $post['category']['name'] }}</span>
@@ -127,10 +116,8 @@ new #[Layout('components.layout')] class extends Component {
                             <span>{{ \Carbon\Carbon::parse($post['created_at'])->diffForHumans() }}</span>
                         </div>
 
-                        <!-- Title -->
                         <h3 class="text-lg font-medium text-gray-900 leading-snug mb-3">{{ $post['title'] }}</h3>
 
-                        <!-- Preview (Image/Text) -->
                         <div class="mb-3">
                             @if(isset($post['image']))
                                 <div class="max-h-[512px] overflow-hidden rounded-md border border-gray-200 flex justify-center bg-black/5 relative group">
@@ -142,7 +129,6 @@ new #[Layout('components.layout')] class extends Component {
                             @endif
                         </div>
 
-                        <!-- Footer Actions -->
                         <div class="flex items-center gap-4 text-gray-500 font-bold text-xs">
                             <div class="flex items-center gap-2 p-1.5 hover:bg-gray-200 rounded px-2 -ml-2 transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,10 +168,8 @@ new #[Layout('components.layout')] class extends Component {
             @endforelse
         </div>
 
-        <!-- Sidebar -->
         <div class="hidden md:block w-80 space-y-4">
 
-            <!-- About Community -->
             <div class="bg-white border border-gray-300 rounded overflow-hidden">
                 <div class="bg-blue-500 h-10 pl-4 flex items-center">
                     <span class="text-white font-bold text-sm">Hakkında</span>
@@ -193,7 +177,6 @@ new #[Layout('components.layout')] class extends Component {
                 <div class="p-4">
                     <div class="flex items-center gap-4 mb-4">
                         <div class="w-12 h-12 bg-gray-200 rounded-full overflow-hidden">
-                            <!-- Logo placeholder -->
                             <span
                                 class="w-full h-full flex items-center justify-center text-xl font-bold text-gray-500">K</span>
                         </div>
@@ -223,7 +206,6 @@ new #[Layout('components.layout')] class extends Component {
                 </div>
             </div>
 
-            <!-- Rules / Footer -->
             <div class="bg-white border border-gray-300 rounded p-4 text-xs text-gray-500">
                 <div class="grid grid-cols-2 gap-2 mb-4">
                     <a href="{{ route('home') }}" class="hover:underline">Ana Sayfa</a>

@@ -11,28 +11,17 @@ new #[Layout('components.layout')] class extends Component {
 
     public function login(ApiService $apiService)
     {
-        $this->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
         $result = $apiService->login($this->email, $this->password);
 
         if ($result && isset($result['token'])) {
             return redirect()->route('dashboard');
         }
 
-        // Handle validation errors from API
         if ($result && isset($result['errors'])) {
             foreach ($result['errors'] as $field => $messages) {
-                foreach ($messages as $message) {
-                    $this->addError($field, $message);
-                }
+                $this->addError($field, is_array($messages) ? $messages[0] : $messages);
             }
-        }
-
-        // Handle general login failure
-        if (!$result) {
+        } else {
             $this->addError('email', 'Giriş bilgileri hatalı veya sunucu yanıt vermiyor.');
         }
     }
@@ -45,7 +34,10 @@ new #[Layout('components.layout')] class extends Component {
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <div class="text-center">
-                <h2 class="text-3xl font-bold text-white">Hoş Geldiniz</h2>
+                <div class="flex items-center justify-center gap-3 mb-2">
+                    <img src="{{ asset('klelogo.svg') }}" alt="Kle Logo" class="w-10 h-10">
+                    <h2 class="text-3xl font-bold text-white">Hoş Geldiniz</h2>
+                </div>
                 <p class="text-blue-100 mt-2">Kle Blog'a giriş yapın</p>
             </div>
         </div>
@@ -64,7 +56,7 @@ new #[Layout('components.layout')] class extends Component {
                         </div>
                         <input wire:model="email" type="email" id="email" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
-                            placeholder="adiniz@ornek.com" required>
+                            placeholder="adiniz@ornek.com">
                     </div>
                     @error('email') 
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
@@ -82,7 +74,7 @@ new #[Layout('components.layout')] class extends Component {
                         </div>
                         <input wire:model="password" type="password" id="password" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
-                            placeholder="********" required>
+                            placeholder="********">
                     </div>
                     @error('password') 
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
