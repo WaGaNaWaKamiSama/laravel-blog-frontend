@@ -9,6 +9,13 @@ new #[Layout('components.layout')] class extends Component {
     public $password = '';
     public $remember = false;
 
+    public function mount()
+    {
+        if (session('api_token')) {
+            return redirect()->route('home');
+        }
+    }
+
     public function login(ApiService $apiService)
     {
         $result = $apiService->login($this->email, $this->password);

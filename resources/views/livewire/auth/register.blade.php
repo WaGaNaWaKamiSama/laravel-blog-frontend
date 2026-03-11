@@ -5,28 +5,35 @@ use Livewire\Attributes\Layout;
 use App\Services\ApiService;
 
 new #[Layout('components.layout')] class extends Component {
-    public $kullaniciAdi = '';
-    public $epostaMail = '';
-    public $girisSifresi = '';
-    public $sifreTekrari = '';
+    public $name = '';
+    public $email = '';
+    public $password = '';
+    public $password_confirmation = '';
 
-    public function hesapOlustur(ApiService $apiService)
+    public function mount()
     {
-        $sonuc = $apiService->register($this->kullaniciAdi, $this->epostaMail, $this->girisSifresi, $this->sifreTekrari);
+        if (session('api_token')) {
+            return redirect()->route('home');
+        }
+    }
 
-        if ($sonuc && isset($sonuc['token'])) {
+    public function registerAccount(ApiService $apiService)
+    {
+        $result = $apiService->register($this->name, $this->email, $this->password, $this->password_confirmation);
+
+        if ($result && isset($result['token'])) {
             return redirect()->route('dashboard');
         }
 
-        if ($sonuc && isset($sonuc['errors'])) {
-            $hatalar = $sonuc['errors'];
+        if ($result && isset($result['errors'])) {
+            $errors = $result['errors'];
             
-            foreach ($hatalar as $alan => $mesajlar) {
-                $mesaj = is_array($mesajlar) ? $mesajlar[0] : $mesajlar;
-                $this->addError($alan, $mesaj);
+            foreach ($errors as $field => $messages) {
+                $message = is_array($messages) ? $messages[0] : $messages;
+                $this->addError($field, $message);
             }
         } else {
-            $this->addError('epostaMail', 'Üyelik oluşturulurken sorun yaşandı. Tekrar deneyiniz.');
+            $this->addError('email', 'Üyelik oluşturulurken sorun yaşandı. Tekrar deneyiniz.');
         }
     }
 };
@@ -48,71 +55,71 @@ new #[Layout('components.layout')] class extends Component {
 
         <!-- Form Content -->
         <div class="p-8">
-            <form wire:submit="hesapOlustur" class="space-y-6">
+            <form wire:submit="registerAccount" class="space-y-6">
                 <!-- Name Field -->
                 <div>
-                    <label for="kullaniciAdi" class="block text-sm font-semibold text-gray-700 mb-2">İsim Soyisim</label>
+                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">İsim Soyisim</label>
                     <div class="relative">
                         <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 100-14 7 7 0 000 14z"></path>
                             </svg>
                         </div>
-                        <input wire:model="kullaniciAdi" type="text" id="kullaniciAdi" 
+                        <input wire:model="name" type="text" id="name" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
                             placeholder="Mehmet Yılmaz">
                     </div>
-                    @error('kullaniciAdi') 
+                    @error('name') 
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
                     @enderror
                 </div>
 
                 <!-- Email Field -->
                 <div>
-                    <label for="epostaMail" class="block text-sm font-semibold text-gray-700 mb-2">E-posta Hesabı</label>
+                    <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">E-posta Hesabı</label>
                     <div class="relative">
                         <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
                         </div>
-                        <input wire:model="epostaMail" type="email" id="epostaMail" 
+                        <input wire:model="email" type="email" id="email" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
                             placeholder="mehmet@gmail.com">
                     </div>
-                    @error('epostaMail') 
+                    @error('email') 
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
                     @enderror
                 </div>
 
                 <!-- Password Field -->
                 <div>
-                    <label for="girisSifresi" class="block text-sm font-semibold text-gray-700 mb-2">Gizli Şifre</label>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Gizli Şifre</label>
                     <div class="relative">
                         <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                             </svg>
                         </div>
-                        <input wire:model="girisSifresi" type="password" id="girisSifresi" 
+                        <input wire:model="password" type="password" id="password" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
                             placeholder="••••••••">
                     </div>
-                    @error('girisSifresi') 
+                    @error('password') 
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
                     @enderror
                 </div>
 
                 <!-- Password Confirmation Field -->
                 <div>
-                    <label for="sifreTekrari" class="block text-sm font-semibold text-gray-700 mb-2">Şifre Doğrulama</label>
+                    <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-2">Şifre Doğrulama</label>
                     <div class="relative">
                         <div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4 6 6m-6-6v6m0 0V6"></path>
                             </svg>
                         </div>
-                        <input wire:model="sifreTekrari" type="password" id="sifreTekrari" 
+                        <input wire:model="password_confirmation" type="password" id="password_confirmation" 
                             class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:outline-none transition-all duration-200 placeholder-gray-400"
                             placeholder="••••••••">
                     </div>

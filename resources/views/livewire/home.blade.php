@@ -53,16 +53,16 @@ new #[Layout('components.layout')] class extends Component {
 ?>
 
 
-<div class="max-w-[1024px] mx-auto py-6">
+<div class="max-w-[1024px] mx-auto px-4 py-6">
     @if(session('success'))
         <div class="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
             <span class="block sm:inline">{{ session('success') }}</span>
         </div>
     @endif
 
-    <div class="flex flex-col md:flex-row gap-6 justify-center">
+    <div class="flex flex-col md:flex-row gap-6 justify-center items-start">
 
-        <div class="w-full md:w-2/3 lg:w-[640px] space-y-4">
+        <div class="w-full md:w-[640px] flex-shrink-0 space-y-4">
 
             <div class="bg-white p-4 rounded border border-gray-300 flex flex-col sm:flex-row gap-2 mb-4 items-start sm:items-center justify-between">
                 <div class="text-sm font-bold text-gray-800 flex items-center gap-2">
@@ -168,7 +168,7 @@ new #[Layout('components.layout')] class extends Component {
             @endforelse
         </div>
 
-        <div class="hidden md:block w-80 space-y-4">
+        <div class="hidden md:block w-80 flex-shrink-0 space-y-4">
 
             <div class="bg-white border border-gray-300 rounded overflow-hidden">
                 <div class="bg-blue-500 h-10 pl-4 flex items-center">

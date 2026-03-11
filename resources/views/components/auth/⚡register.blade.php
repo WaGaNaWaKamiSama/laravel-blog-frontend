@@ -5,18 +5,10 @@ use App\Services\ApiService;
 use Livewire\Attributes\{Layout, Title, Validate};
 
 new #[Layout('components.layout')] #[Title('Sign Up - Kle Blog')] class extends Component {
-    #[Validate('required|min:3')]
     public $name = '';
-
-    #[Validate('required|email')]
     public $email = '';
-
-    #[Validate('required|min:6')]
     public $password = '';
-
-    #[Validate('required')]
     public $password_confirmation = '';
-
     public $terms = false;
     public $errorMessage = '';
 
@@ -28,25 +20,38 @@ new #[Layout('components.layout')] #[Title('Sign Up - Kle Blog')] class extends 
 
     public function register(ApiService $api)
     {
-        // Debug: Log the incoming values
-        \Log::info('Register attempt', [
-            'name' => $this->name,
-            'email' => $this->email,
-            'password' => !empty($this->password) ? '***' : 'empty',
-            'password_confirmation' => !empty($this->password_confirmation) ? '***' : 'empty',
-            'terms' => $this->terms
-        ]);
+        $this->resetErrorBag();
+        $this->errorMessage = '';
 
-        $this->validate();
+        if (empty($this->name)) {
+            $this->addError('name', 'Name is required.');
+        } elseif (strlen($this->name) < 3) {
+            $this->addError('name', 'Name must be at least 3 characters.');
+        }
+
+        if (empty($this->email)) {
+            $this->addError('email', 'Email is required.');
+        } elseif (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) {
+            $this->addError('email', 'Email must be a valid email address.');
+        }
+
+        if (empty($this->password)) {
+            $this->addError('password', 'Password is required.');
+        } elseif (strlen($this->password) < 6) {
+            $this->addError('password', 'Password must be at least 6 characters.');
+        }
+
+        if (empty($this->password_confirmation)) {
+            $this->addError('password_confirmation', 'Password confirmation is required.');
+        } elseif ($this->password !== $this->password_confirmation) {
+            $this->addError('password_confirmation', 'The password confirmation does not match.');
+        }
 
         if (!$this->terms) {
             $this->errorMessage = 'You must accept the terms and conditions.';
-            return;
         }
 
-        // Check password confirmation
-        if ($this->password !== $this->password_confirmation) {
-            $this->addError('password_confirmation', 'The password confirmation does not match.');
+        if ($this->getErrorBag()->any() || $this->errorMessage) {
             return;
         }
 
@@ -58,11 +63,9 @@ new #[Layout('components.layout')] #[Title('Sign Up - Kle Blog')] class extends 
                 return redirect()->route('dashboard');
             }
 
-            // Handle API validation errors
             if ($result && isset($result['errors'])) {
                 $errors = $result['errors'];
                 
-                // Add specific field errors
                 if (isset($errors['email'])) {
                     $this->addError('email', is_array($errors['email']) ? $errors['email'][0] : $errors['email']);
                 }
@@ -73,11 +76,10 @@ new #[Layout('components.layout')] #[Title('Sign Up - Kle Blog')] class extends 
                     $this->addError('password', is_array($errors['password']) ? $errors['password'][0] : $errors['password']);
                 }
             } else {
-                $this->errorMessage = 'An error occurred during registration. This email address may already be in use.';
+                $this->errorMessage = 'An error occurred during registration. Please try again.';
             }
         } catch (\Exception $e) {
-            \Log::error('Register exception', ['message' => $e->getMessage()]);
-            $this->errorMessage = 'An error occurred. Please try again.';
+            $this->errorMessage = 'Connection error. Please check if the backend is running.';
         }
     }
 };
@@ -91,13 +93,7 @@ new #[Layout('components.layout')] #[Title('Sign Up - Kle Blog')] class extends 
                 <h1 class="text-2xl font-bold text-gray-900 mb-2">Create Account</h1>
                 <p class="text-sm text-gray-600">Enter your information to create a new account</p>
                 
-                <!-- Debug Info -->
-                <div class="mt-4 p-2 bg-gray-100 text-xs text-left">
-                    <div>Name: {{ $name }}</div>
-                    <div>Email: {{ $email }}</div>
-                    <div>Password: {{ !empty($password) ? 'filled' : 'empty' }}</div>
-                    <div>Password Confirm: {{ !empty($password_confirmation) ? 'filled' : 'empty' }}</div>
-                </div>
+
             </div>
 
             <!-- Form -->

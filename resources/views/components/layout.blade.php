@@ -11,7 +11,7 @@
     @livewireStyles
 </head>
 
-<body class="min-h-screen flex flex-col bg-[#DAE0E6]">
+<body class="min-h-screen flex flex-col bg-[#DAE0E6] overflow-y-scroll">
     <!-- Reddit-Style Header -->
     <header class="bg-white border-b border-gray-300 sticky top-0 z-50">
         <div class="h-12 flex items-center px-4 max-w-full">
@@ -61,7 +61,7 @@
                              x-transition.origin.top.right
                              class="absolute right-0 top-full mt-2 w-56 bg-white rounded-md shadow-lg py-1 border border-gray-200 z-[60]">
                             <a href="{{ route('profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</a>
-                            <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Dashboard</a>
+                            <a href="{{ route('dashboard') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Yazı Oluştur</a>
                             <div class="border-t border-gray-100 my-1"></div>
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf

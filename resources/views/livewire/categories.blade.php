@@ -22,9 +22,9 @@ new #[Layout('components.layout')] class extends Component {
 
 ?>
 
-<div class="max-w-[1024px] mx-auto py-6">
-    <div class="flex flex-col md:flex-row gap-6">
-        <div class="w-full md:w-2/3 lg:w-[640px] space-y-4">
+<div class="max-w-[1024px] mx-auto px-4 py-6">
+    <div class="flex flex-col md:flex-row gap-6 justify-center items-start">
+        <div class="w-full md:w-[640px] flex-shrink-0 space-y-4">
             <div class="bg-white border border-gray-300 rounded p-4">
                 <div class="flex items-center justify-between">
                     <div>
@@ -61,7 +61,7 @@ new #[Layout('components.layout')] class extends Component {
             @endforelse
         </div>
 
-        <div class="hidden md:block w-80 space-y-4">
+        <div class="hidden md:block w-80 flex-shrink-0 space-y-4">
             <div class="bg-white border border-gray-300 rounded overflow-hidden">
                 <div class="bg-blue-500 h-10 pl-4 flex items-center">
                     <span class="text-white font-bold text-sm">Hakkında</span>

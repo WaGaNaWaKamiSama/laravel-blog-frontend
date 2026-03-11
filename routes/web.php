@@ -14,8 +14,8 @@ Volt::route('/login', 'auth.login')->name('login')->middleware('guest');
 Volt::route('/register', 'auth.register')->name('register')->middleware('guest');
 
 Route::post('/logout', function () {
-    session()->forget('api_token');
-    return redirect('/')->with('success', 'Başarıyla çıkış yaptınız.');
+    app(\App\Services\ApiService::class)->logout();
+    return redirect('/')->with('success', 'Logged out successfully.');
 })->name('logout');
 
 Volt::route('/dashboard', 'dashboard')->name('dashboard')->middleware('auth.token');
