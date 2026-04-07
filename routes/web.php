@@ -23,3 +23,4 @@ Volt::route('/dashboard', 'dashboard')->name('dashboard')->middleware('auth.toke
 Volt::route('/profile', 'profile')->name('profile')->middleware('auth.token');
 
 Volt::route('/post-pending', 'post-pending')->name('post.pending')->middleware('auth.token');
+Volt::route('/contracts/{slug}', 'contract-detail')->name('contracts.show');

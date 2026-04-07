@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Client\ConnectionException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -25,6 +26,10 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (ConnectionException $e) {
+            return response('', 200);
         });
     }
 }

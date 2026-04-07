@@ -7,7 +7,6 @@ use App\Services\ApiService;
 new #[Layout('components.layout')] class extends Component {
     public $email = '';
     public $password = '';
-    public $remember = false;
 
     public function mount()
     {
@@ -51,6 +50,11 @@ new #[Layout('components.layout')] class extends Component {
 
         <!-- Form Content -->
         <div class="p-8">
+            @if(session('error'))
+                <div class="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
             <form wire:submit="login" class="space-y-6">
                 <!-- Email Field -->
                 <div>
@@ -88,17 +92,9 @@ new #[Layout('components.layout')] class extends Component {
                     @enderror
                 </div>
 
-                <!-- Remember Me & Forgot Password -->
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input wire:model="remember" id="remember-me" type="checkbox"
-                            class="h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-300 rounded">
-                        <label for="remember-me" class="ml-2 block text-sm text-gray-700">Beni hatırla</label>
-                    </div>
-
-                    <div class="text-sm">
-                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">Şifremi unuttum?</a>
-                    </div>
+                <!-- Forgot Password -->
+                <div class="text-right text-sm">
+                    <a href="#" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">Şifremi unuttum?</a>
                 </div>
 
                 <!-- Submit Button -->

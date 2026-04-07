@@ -55,6 +55,11 @@ new #[Layout('components.layout')] class extends Component {
 
         <!-- Form Content -->
         <div class="p-8">
+            @if(session('error'))
+                <div class="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
             <form wire:submit="registerAccount" class="space-y-6">
                 <!-- Name Field -->
                 <div>

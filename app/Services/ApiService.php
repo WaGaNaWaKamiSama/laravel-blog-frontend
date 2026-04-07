@@ -180,6 +180,18 @@ class ApiService
         return $response->successful() ? $response->json() : ['data' => []];
     }
 
+    public function getContracts()
+    {
+        $response = $this->client()->get('/contracts');
+        return $response->successful() ? $response->json() : [];
+    }
+ 
+    public function getContract(string $slug)
+    {
+        $response = $this->client()->get("/contracts/{$slug}");
+        return $response->successful() ? $response->json() : null;
+    }
+
     public function getComments(int $postId)
     {
         $response = $this->client()->get("/posts/{$postId}/comments");
